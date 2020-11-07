@@ -1,3 +1,4 @@
+--Exploratory analysis
 SELECT COUNT(*)
 FROM app_store_apps
 
@@ -31,15 +32,14 @@ FROM app_store_apps AS a INNER JOIN play_store_apps AS p
 ON a.name = p.name
 ORDER BY genre;
 
---WHERE rating >=4.0
+--Returns apps with rating >=4.0
 SELECT DISTINCT(a.name), a.price, CAST (a.review_count AS INTEGER), a.rating, primary_genre AS genre
 FROM app_store_apps AS a INNER JOIN play_store_apps AS p
 ON a.name = p.name
 WHERE a.rating >= 4.0
 ORDER BY a.rating, genre;
 
---WHERE review_count >=?
-
+--Returns apps with review_count >=10000
 WITH best_aps AS (SELECT DISTINCT(a.name), a.price, CAST (a.review_count AS INTEGER), a.rating, primary_genre AS genre
 	FROM app_store_apps AS a INNER JOIN play_store_apps AS p
 	ON a.name = p.name
@@ -50,18 +50,6 @@ FROM best_aps
 WHERE review_count >= 10000
 ORDER BY review_count DESC;
 
-WITH best_aps AS (SELECT DISTINCT(a.name), a.price, CAST (a.review_count AS INTEGER), a.rating, primary_genre AS genre
-	FROM app_store_apps AS a INNER JOIN play_store_apps AS p
-	ON a.name = p.name
-	WHERE a.rating >= 3.0
-	ORDER BY a.rating, genre)
-SELECT *
-FROM best_aps
-WHERE review_count >= 10000
-GROUP BY best_aps.name, genre;
-
---BINS or SERIES
-
 --Summary Stats by Genre
 WITH working_list AS( SELECT DISTINCT(a.name), a.price, CAST (a.review_count AS INTEGER), a.rating, primary_genre AS genre
 					FROM app_store_apps AS a INNER JOIN play_store_apps AS p
@@ -71,30 +59,21 @@ SELECT genre, ROUND(AVG(rating),1) AS avg_rating, ROUND(AVG(review_count)) AS av
 FROM working_list
 GROUP BY genre
 ORDER BY avg_review_count DESC;
-				
 
+--Returns apps from the play store that are in the game category
+SELECT *
+FROM play_store_apps
+WHERE category = 'GAME'
+ORDER BY name DESC;
 
--- What groups are you computing statistics by?
-SELECT sector,
-       -- Select the mean of assets with the avg function
-       avg(assets) AS mean,
-       -- Select the median
-       percentile_disc(.5) WITHIN GROUP (ORDER BY assets) AS median
-  FROM fortune500
- -- Computing statistics for each what?
- GROUP BY sector
- -- Order results by a value of interest
- ORDER BY mean;
- 
- 
--- SUBqueries on WORKING LIST
-(SELECT DISTINCT(a.name), a.price, CAST (a.review_count AS INTEGER), a.rating, primary_genre AS genre
-FROM app_store_apps AS a INNER JOIN play_store_apps AS p
-ON a.name = p.name
-ORDER BY rating, review_count DESC)
+--Returns apps in both app stores with a rating better than 4
+SELECT DISTINCT(a.name), a.rating AS appl_rat, p.rating AS goog_rat, p.price
+FROM play_store_apps AS p FULL JOIN app_store_apps AS a 
+USING(name)
+WHERE a.rating > 4.0 AND p.rating > 4.0
+ORDER BY name;
 
---Sarah Beth 
-
+--Returns the name, total revenue based on lifespan, installs, and category for apps in both app stores
 SELECT name, (lifespan*4000*12 - purchase_price) AS total_rev
 FROM
 (SELECT a.name, a.rating, MAX(a.review_count) AS review_count_max, a.price,
@@ -119,19 +98,3 @@ WHERE a.rating IS NOT NULL
 GROUP BY a.name, a.rating, a.price, lifespan) AS first_query
 GROUP BY name, lifespan, purchase_price
 ORDER BY total_rev DESC;
-
-
---AVG Review COunt
-WITH best_aps AS (SELECT DISTINCT(a.name), a.price, CAST (a.review_count AS INTEGER), a.rating, primary_genre AS genre
-	FROM app_store_apps AS a INNER JOIN play_store_apps AS p
-	ON a.name = p.name
-	WHERE a.rating >= 3.0
-	ORDER BY a.rating, genre)
-SELECT AVG(review_count)
-FROM best_aps
-WHERE review_count >= 10000
-
-
-
-
-
